@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, CreditCard, Truck } from 'lucide-react';
+import { Check, CreditCard } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useCart } from '../context/CartContext';
+import { createOrder } from '../services/orderService';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
@@ -47,19 +48,41 @@ const Checkout = () => {
     }));
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // In a real application, you would send this data to your backend/Supabase
-    console.log('Order data:', { formData, items, totalPrice });
-    
-    // Clear cart and navigate to success page
-    clearCart();
-    toast({
-      title: "Order placed successfully",
-      description: "Thank you for your purchase!",
-    });
-    navigate('/tracking', { state: { orderId: 'ORD' + Math.floor(Math.random() * 10000000) } });
+    try {
+      // Create order using our service
+      const orderData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        address: formData.address,
+        city: formData.city,
+        zipCode: formData.zipCode,
+        country: formData.country,
+        items: items,
+        totalAmount: totalPrice + totalPrice * 0.08, // Including tax
+      };
+      
+      const { orderId } = await createOrder(orderData);
+      
+      // Clear cart and navigate to success page
+      clearCart();
+      toast({
+        title: "Order placed successfully",
+        description: "Thank you for your purchase!",
+      });
+      
+      navigate('/tracking', { state: { orderId } });
+    } catch (error) {
+      console.error("Error placing order:", error);
+      toast({
+        title: "Error placing order",
+        description: "Please try again later.",
+        variant: "destructive"
+      });
+    }
   };
   
   // Redirect to home if cart is empty

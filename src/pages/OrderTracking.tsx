@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Check, Truck, Package, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { getOrderByTrackingId, getOrderById } from '../services/orderService';
 
 interface TrackingStep {
   status: 'completed' | 'current' | 'upcoming';
@@ -19,6 +20,22 @@ const OrderTracking = () => {
   const orderId = location.state?.orderId || '';
   const [trackingId, setTrackingId] = useState('');
   const [searchedOrderId, setSearchedOrderId] = useState(orderId);
+  const [orderData, setOrderData] = useState<any>(null);
+  
+  useEffect(() => {
+    const fetchOrderData = async () => {
+      if (orderId) {
+        const data = await getOrderById(orderId);
+        if (data) {
+          setOrderData(data);
+        }
+      }
+    };
+    
+    if (orderId) {
+      fetchOrderData();
+    }
+  }, [orderId]);
   
   // Mock tracking data
   const trackingSteps: TrackingStep[] = [
@@ -51,9 +68,19 @@ const OrderTracking = () => {
     }
   ];
   
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSearchedOrderId(trackingId);
+    
+    if (trackingId) {
+      const data = await getOrderByTrackingId(trackingId);
+      if (data) {
+        setOrderData(data);
+        setSearchedOrderId(data.orders.id);
+      } else {
+        // Fallback to mock data
+        setSearchedOrderId(trackingId);
+      }
+    }
   };
   
   return (
@@ -68,14 +95,14 @@ const OrderTracking = () => {
           <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
             <div className="flex-grow">
               <label htmlFor="trackingId" className="block text-sm font-medium text-gray-700 mb-1">
-                Order ID
+                Order ID or Tracking Number
               </label>
               <input
                 type="text"
                 id="trackingId"
                 value={trackingId}
                 onChange={(e) => setTrackingId(e.target.value)}
-                placeholder="Enter your order ID"
+                placeholder="Enter your order ID or tracking number"
                 className="w-full px-3 py-2 border rounded-md"
                 required={!searchedOrderId}
               />
@@ -135,15 +162,15 @@ const OrderTracking = () => {
                 </div>
                 <div>
                   <h4 className="text-sm text-gray-600">Tracking Number</h4>
-                  <p className="font-medium">TRK{Math.floor(Math.random() * 100000000)}</p>
+                  <p className="font-medium">{orderData?.tracking_number || `TRK${Math.floor(Math.random() * 100000000)}`}</p>
                 </div>
                 <div>
                   <h4 className="text-sm text-gray-600">Shipping Address</h4>
-                  <p className="font-medium">123 Main St, Anytown, ST 12345</p>
+                  <p className="font-medium">{orderData?.orders?.address || "123 Main St, Anytown, ST 12345"}</p>
                 </div>
                 <div>
                   <h4 className="text-sm text-gray-600">Contact</h4>
-                  <p className="font-medium">customer@example.com</p>
+                  <p className="font-medium">{orderData?.orders?.email || "customer@example.com"}</p>
                 </div>
               </div>
             </div>

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, User } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 
 const Navbar = () => {
@@ -24,6 +24,10 @@ const Navbar = () => {
                 {itemCount}
               </span>
             )}
+          </Link>
+          
+          <Link to="/auth" className="text-gray-700 hover:text-shop-primary transition-colors">
+            <User className="h-6 w-6" />
           </Link>
         </div>
       </div>
