@@ -7,19 +7,14 @@ import { useCart } from '../context/CartContext';
 import { createOrder } from '../services/orderService';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface FormData {
-  firstName: string;
-  lastName: string;
+  name: string;
   email: string;
   address: string;
-  city: string;
-  zipCode: string;
-  country: string;
-  cardName: string;
   cardNumber: string;
-  cardExpiry: string;
-  cardCvc: string;
 }
 
 const Checkout = () => {
@@ -27,17 +22,10 @@ const Checkout = () => {
   const { toast } = useToast();
   const { items, totalPrice, clearCart } = useCart();
   const [formData, setFormData] = useState<FormData>({
-    firstName: '',
-    lastName: '',
+    name: '',
     email: '',
     address: '',
-    city: '',
-    zipCode: '',
-    country: '',
-    cardName: '',
     cardNumber: '',
-    cardExpiry: '',
-    cardCvc: '',
   });
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,13 +42,13 @@ const Checkout = () => {
     try {
       // Create order using our service
       const orderData = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+        firstName: formData.name.split(' ')[0],
+        lastName: formData.name.split(' ').slice(1).join(' ') || '-',
         email: formData.email,
         address: formData.address,
-        city: formData.city,
-        zipCode: formData.zipCode,
-        country: formData.country,
+        city: 'Default City', // Default values
+        zipCode: '00000',
+        country: 'Indonesia',
         items: items,
         totalAmount: totalPrice + totalPrice * 0.08, // Including tax
       };
@@ -101,190 +89,75 @@ const Checkout = () => {
         <h1 className="text-3xl font-bold mb-8">Checkout</h1>
         
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Customer Information */}
+          {/* Simplified Customer Information */}
           <div>
             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
               <h2 className="text-xl font-bold mb-4">Contact Information</h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="space-y-4">
                 <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
-                    First Name
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                    Full Name
                   </label>
-                  <input
+                  <Input
                     type="text"
-                    id="firstName"
-                    name="firstName"
-                    value={formData.firstName}
+                    id="name"
+                    name="name"
+                    value={formData.name}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border rounded-md"
                   />
                 </div>
+                
                 <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
-                    Last Name
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                    Email Address
                   </label>
-                  <input
-                    type="text"
-                    id="lastName"
-                    name="lastName"
-                    value={formData.lastName}
+                  <Input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border rounded-md"
                   />
                 </div>
-              </div>
-              
-              <div className="mb-4">
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border rounded-md"
-                />
-              </div>
-            </div>
-            
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <h2 className="text-xl font-bold mb-4">Shipping Address</h2>
-              
-              <div className="mb-4">
-                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-                  Street Address
-                </label>
-                <input
-                  type="text"
-                  id="address"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border rounded-md"
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                
                 <div>
-                  <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
-                    City
+                  <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+                    Delivery Address
                   </label>
-                  <input
+                  <Input
                     type="text"
-                    id="city"
-                    name="city"
-                    value={formData.city}
+                    id="address"
+                    name="address"
+                    value={formData.address}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border rounded-md"
+                    placeholder="Enter your complete address"
                   />
                 </div>
-                <div>
-                  <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700 mb-1">
-                    ZIP / Postal Code
-                  </label>
-                  <input
-                    type="text"
-                    id="zipCode"
-                    name="zipCode"
-                    value={formData.zipCode}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border rounded-md"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
-                  Country
-                </label>
-                <input
-                  type="text"
-                  id="country"
-                  name="country"
-                  value={formData.country}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border rounded-md"
-                />
               </div>
             </div>
             
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-xl font-bold mb-4">Payment Information</h2>
               
-              <div className="mb-4">
-                <label htmlFor="cardName" className="block text-sm font-medium text-gray-700 mb-1">
-                  Name on Card
-                </label>
-                <input
-                  type="text"
-                  id="cardName"
-                  name="cardName"
-                  value={formData.cardName}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border rounded-md"
-                />
-              </div>
-              
-              <div className="mb-4">
+              <div>
                 <label htmlFor="cardNumber" className="block text-sm font-medium text-gray-700 mb-1">
                   Card Number
                 </label>
                 <div className="flex items-center">
-                  <input
+                  <Input
                     type="text"
                     id="cardNumber"
                     name="cardNumber"
                     value={formData.cardNumber}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-3 py-2 border rounded-md"
                     placeholder="XXXX XXXX XXXX XXXX"
                   />
                   <CreditCard className="w-5 h-5 text-gray-400 ml-2" />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="cardExpiry" className="block text-sm font-medium text-gray-700 mb-1">
-                    Expiry Date
-                  </label>
-                  <input
-                    type="text"
-                    id="cardExpiry"
-                    name="cardExpiry"
-                    value={formData.cardExpiry}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border rounded-md"
-                    placeholder="MM/YY"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="cardCvc" className="block text-sm font-medium text-gray-700 mb-1">
-                    CVC
-                  </label>
-                  <input
-                    type="text"
-                    id="cardCvc"
-                    name="cardCvc"
-                    value={formData.cardCvc}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 border rounded-md"
-                    placeholder="CVC"
-                  />
                 </div>
               </div>
             </div>
@@ -332,12 +205,12 @@ const Checkout = () => {
                 <span className="font-bold">${(totalPrice + totalPrice * 0.08).toFixed(2)}</span>
               </div>
               
-              <button 
+              <Button 
                 type="submit" 
                 className="bg-shop-primary text-white w-full py-3 px-4 rounded-md text-center block hover:bg-shop-secondary transition-colors flex items-center justify-center"
               >
                 <Check className="w-5 h-5 mr-2" /> Complete Order
-              </button>
+              </Button>
               
               <p className="text-xs text-gray-500 text-center mt-4">
                 By placing your order, you agree to our Terms of Service and Privacy Policy.
