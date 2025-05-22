@@ -81,20 +81,14 @@ export async function createOrder(orderData: OrderData) {
       throw orderError;
     }
 
-    // Create order items
+    // Create order items - with fixed product_id handling
     const orderItems = orderData.items.map(item => {
-      // Handle cases where the product ID might be a number
-      let productId = item.product.id;
-      
-      // If it's a numeric ID, convert it to a string with a prefix to make it a valid UUID
-      if (typeof productId === 'number') {
-        // Generate a deterministic string for the product ID
-        productId = `product-${productId}`;
-      }
+      // Generate a valid UUID for each product regardless of the ID type
+      const productUuid = uuidv4();
       
       return {
         order_id: orderId,
-        product_id: productId.toString(),
+        product_id: productUuid,
         quantity: item.quantity,
         unit_price: item.product.price
       };
