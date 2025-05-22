@@ -28,6 +28,7 @@ const Checkout = () => {
     cardNumber: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -35,12 +36,46 @@ const Checkout = () => {
       ...prevData,
       [name]: value,
     }));
+    
+    // Clear validation error when user starts typing
+    if (validationError) {
+      setValidationError(null);
+    }
+  };
+  
+  const validateForm = () => {
+    if (!formData.name || formData.name.trim() === '') {
+      setValidationError('Please enter your full name');
+      return false;
+    }
+    if (!formData.email || !formData.email.includes('@')) {
+      setValidationError('Please enter a valid email address');
+      return false;
+    }
+    if (!formData.address || formData.address.trim() === '') {
+      setValidationError('Please enter your delivery address');
+      return false;
+    }
+    if (!formData.cardNumber || formData.cardNumber.trim() === '') {
+      setValidationError('Please enter your card number');
+      return false;
+    }
+    return true;
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (isSubmitting) return;
+    
+    if (!validateForm()) {
+      toast({
+        title: "Form validation failed",
+        description: validationError,
+        variant: "destructive"
+      });
+      return;
+    }
     
     setIsSubmitting(true);
     

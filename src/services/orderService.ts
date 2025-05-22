@@ -83,12 +83,23 @@ export async function createOrder(orderData: OrderData) {
     }
 
     // Create order items
-    const orderItems = orderData.items.map(item => ({
-      order_id: orderId,
-      product_id: item.product.id.toString(), // Ensure it's a string for UUID
-      quantity: item.quantity,
-      unit_price: item.product.price
-    }));
+    const orderItems = orderData.items.map(item => {
+      // Handle cases where the product ID might be a number
+      let productId = item.product.id;
+      
+      // If it's a numeric ID, convert it to a UUID-like string
+      if (typeof productId === 'number') {
+        // Generate a deterministic UUID-like string from the numeric ID
+        productId = uuidv4({ random: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, productId] });
+      }
+      
+      return {
+        order_id: orderId,
+        product_id: productId,
+        quantity: item.quantity,
+        unit_price: item.product.price
+      };
+    });
 
     const { error: itemsError } = await supabase
       .from('order_items')
