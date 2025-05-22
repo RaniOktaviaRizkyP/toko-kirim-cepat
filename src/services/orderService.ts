@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -87,15 +86,15 @@ export async function createOrder(orderData: OrderData) {
       // Handle cases where the product ID might be a number
       let productId = item.product.id;
       
-      // If it's a numeric ID, convert it to a UUID-like string
+      // If it's a numeric ID, convert it to a string with a prefix to make it a valid UUID
       if (typeof productId === 'number') {
-        // Generate a deterministic UUID-like string from the numeric ID
-        productId = uuidv4({ random: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, productId] });
+        // Generate a deterministic string for the product ID
+        productId = `product-${productId}`;
       }
       
       return {
         order_id: orderId,
-        product_id: productId,
+        product_id: productId.toString(),
         quantity: item.quantity,
         unit_price: item.product.price
       };
