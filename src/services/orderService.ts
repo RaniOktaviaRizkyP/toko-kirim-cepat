@@ -24,6 +24,40 @@ interface OrderData {
   totalAmount: number;
 }
 
+// Order response interfaces for consistent typing
+interface OrderDetails {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  address: string;
+  city: string;
+  zip_code: string;
+  country: string;
+  total_amount: number;
+  status: string;
+  created_at: string;
+  user_id: string | null;
+}
+
+interface ShippingDetails {
+  id: string;
+  order_id: string;
+  tracking_number: string;
+  status: string;
+  estimated_delivery: string;
+  shipped_at: string | null;
+  delivered_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface OrderResponse {
+  order: OrderDetails;
+  shipping: ShippingDetails | null;
+  items: any[] | null;
+}
+
 export async function createOrder(orderData: OrderData) {
   try {
     // Create a new order
@@ -94,7 +128,7 @@ export function generateTrackingNumber() {
   return 'TRK' + Math.floor(Math.random() * 100000000);
 }
 
-export async function getOrderByTrackingNumber(trackingNumber: string) {
+export async function getOrderByTrackingNumber(trackingNumber: string): Promise<OrderResponse | null> {
   try {
     const { data, error } = await supabase
       .from('shipping')
@@ -110,14 +144,18 @@ export async function getOrderByTrackingNumber(trackingNumber: string) {
       throw error;
     }
 
-    return data;
+    return {
+      order: data.orders,
+      shipping: data,
+      items: null
+    };
   } catch (error) {
     console.error('Error in getOrderByTrackingNumber:', error);
     throw error;
   }
 }
 
-export async function getOrderById(orderId: string) {
+export async function getOrderById(orderId: string): Promise<OrderResponse> {
   try {
     // First, get the order details
     const { data: orderData, error: orderError } = await supabase
@@ -213,7 +251,7 @@ export async function updateShippingStatus(orderId: string, status: string) {
   }
 }
 
-export async function searchOrder(searchTerm: string) {
+export async function searchOrder(searchTerm: string): Promise<{ found: boolean, type?: string, data?: OrderResponse }> {
   try {
     // First try to find by tracking number
     const { data: trackingData, error: trackingError } = await supabase
@@ -228,7 +266,11 @@ export async function searchOrder(searchTerm: string) {
       return { 
         found: true, 
         type: 'tracking',
-        data: trackingData[0]
+        data: {
+          order: trackingData[0].orders,
+          shipping: trackingData[0],
+          items: null
+        }
       };
     }
 
@@ -245,7 +287,11 @@ export async function searchOrder(searchTerm: string) {
       return { 
         found: true, 
         type: 'order',
-        data: orderData[0]
+        data: {
+          order: orderData[0],
+          shipping: orderData[0].shipping?.length > 0 ? orderData[0].shipping[0] : null,
+          items: null
+        }
       };
     }
 

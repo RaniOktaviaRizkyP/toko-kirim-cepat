@@ -96,9 +96,9 @@ const OrderTracking = () => {
     try {
       const data = await getOrderByTrackingNumber(trackingNumber);
       if (data) {
-        setOrderData(data.orders);
-        setShippingData(data);
-        setTrackingSteps(generateTrackingSteps(data.status, data));
+        setOrderData(data.order);
+        setShippingData(data.shipping);
+        setTrackingSteps(generateTrackingSteps(data.shipping?.status || 'processing', data.shipping));
       } else {
         setError('Order not found. Please check the order ID or tracking number and try again.');
       }
@@ -129,23 +129,17 @@ const OrderTracking = () => {
     try {
       const result = await searchOrder(searchTerm);
       
-      if (result.found) {
-        if (result.type === 'tracking') {
-          setOrderData(result.data.orders);
-          setShippingData(result.data);
-          setTrackingSteps(generateTrackingSteps(result.data.status, result.data));
-        } else {
-          setOrderData(result.data);
-          setShippingData(result.data.shipping);
-          setTrackingSteps(generateTrackingSteps(
-            result.data.shipping?.status || 'processing', 
-            result.data.shipping
-          ));
-        }
+      if (result.found && result.data) {
+        setOrderData(result.data.order);
+        setShippingData(result.data.shipping);
+        setTrackingSteps(generateTrackingSteps(
+          result.data.shipping?.status || 'processing', 
+          result.data.shipping
+        ));
         
         toast({
           title: "Order found",
-          description: `Found order for ${result.data.orders?.first_name || ''} ${result.data.orders?.last_name || ''}`,
+          description: `Found order for ${result.data.order.first_name} ${result.data.order.last_name}`,
         });
       } else {
         setOrderData(null);
