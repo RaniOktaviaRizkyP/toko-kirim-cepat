@@ -85,6 +85,9 @@ const Checkout = () => {
       const firstName = nameParts[0];
       const lastName = nameParts.slice(1).join(' ') || '-';
       
+      // Log the cart items to debug
+      console.log("Cart items being sent:", JSON.stringify(items));
+      
       // Create order using our service
       const orderData = {
         firstName: firstName,

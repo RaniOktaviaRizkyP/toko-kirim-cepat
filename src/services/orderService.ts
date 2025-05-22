@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -81,14 +82,40 @@ export async function createOrder(orderData: OrderData) {
       throw orderError;
     }
 
-    // Create order items - with fixed product_id handling
+    // Fetch product data from the database to get the correct UUIDs
+    const productIds = orderData.items.map(item => 
+      typeof item.product.id === 'number' ? item.product.id.toString() : item.product.id
+    );
+    
+    const { data: productsData, error: productsError } = await supabase
+      .from('products')
+      .select('id, price')
+      .in('id', productIds);
+    
+    if (productsError || !productsData) {
+      console.error('Error fetching products:', productsError);
+      throw productsError || new Error('No products found');
+    }
+
+    // Create a mapping of product IDs to their database IDs
+    const productMapping = {};
+    productsData.forEach(product => {
+      productMapping[product.id] = {
+        id: product.id,
+        price: product.price
+      };
+    });
+
+    // Create order items using the correct database product IDs
     const orderItems = orderData.items.map(item => {
-      // Generate a valid UUID for each product regardless of the ID type
-      const productUuid = uuidv4();
+      const productId = typeof item.product.id === 'number' 
+        ? item.product.id.toString() 
+        : item.product.id;
       
+      // Use the product price from the database to ensure accuracy
       return {
         order_id: orderId,
-        product_id: productUuid,
+        product_id: productId,
         quantity: item.quantity,
         unit_price: item.product.price
       };
