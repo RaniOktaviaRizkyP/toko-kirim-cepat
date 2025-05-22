@@ -8,7 +8,7 @@ const Navbar = () => {
   const { itemCount } = useCart();
 
   return (
-    <nav className="bg-white shadow-sm py-4">
+    <nav className="bg-white shadow-sm py-4 sticky top-0 z-50">
       <div className="container mx-auto px-4 flex justify-between items-center">
         <Link to="/" className="text-2xl font-bold text-shop-primary">ShopPurple</Link>
         
