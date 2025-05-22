@@ -27,6 +27,7 @@ const Checkout = () => {
     address: '',
     cardNumber: '',
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -39,11 +40,20 @@ const Checkout = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
+    
     try {
+      // Split name into first and last name
+      const nameParts = formData.name.split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ') || '-';
+      
       // Create order using our service
       const orderData = {
-        firstName: formData.name.split(' ')[0],
-        lastName: formData.name.split(' ').slice(1).join(' ') || '-',
+        firstName: firstName,
+        lastName: lastName,
         email: formData.email,
         address: formData.address,
         city: 'Default City', // Default values
@@ -53,23 +63,26 @@ const Checkout = () => {
         totalAmount: totalPrice + totalPrice * 0.08, // Including tax
       };
       
-      const { orderId } = await createOrder(orderData);
+      const { orderId, trackingNumber } = await createOrder(orderData);
       
       // Clear cart and navigate to success page
       clearCart();
       toast({
         title: "Order placed successfully",
-        description: "Thank you for your purchase!",
+        description: `Your order #${orderId.substring(0, 8)} has been placed successfully!`,
       });
       
+      // Navigate to tracking page with order info
       navigate('/tracking', { state: { orderId } });
     } catch (error) {
       console.error("Error placing order:", error);
       toast({
         title: "Error placing order",
-        description: "Please try again later.",
+        description: "We couldn't process your order. Please try again later.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
@@ -208,8 +221,10 @@ const Checkout = () => {
               <Button 
                 type="submit" 
                 className="bg-shop-primary text-white w-full py-3 px-4 rounded-md text-center block hover:bg-shop-secondary transition-colors flex items-center justify-center"
+                disabled={isSubmitting}
               >
-                <Check className="w-5 h-5 mr-2" /> Complete Order
+                <Check className="w-5 h-5 mr-2" /> 
+                {isSubmitting ? "Processing..." : "Complete Order"}
               </Button>
               
               <p className="text-xs text-gray-500 text-center mt-4">

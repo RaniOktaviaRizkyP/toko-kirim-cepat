@@ -39,7 +39,8 @@ export async function createOrder(orderData: OrderData) {
         city: orderData.city,
         zip_code: orderData.zipCode,
         country: orderData.country,
-        total_amount: orderData.totalAmount
+        total_amount: orderData.totalAmount,
+        status: 'pending'
       });
 
     if (orderError) {
@@ -65,13 +66,16 @@ export async function createOrder(orderData: OrderData) {
     }
 
     // Create shipping entry
-    const trackingNumber = 'TRK' + Math.floor(Math.random() * 100000000);
+    const trackingNumber = generateTrackingNumber();
+    const estimatedDelivery = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString();
+    
     const { error: shippingError } = await supabase
       .from('shipping')
       .insert({
         order_id: orderId,
         tracking_number: trackingNumber,
-        estimated_delivery: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString()
+        estimated_delivery: estimatedDelivery,
+        status: 'processing'
       });
 
     if (shippingError) {
@@ -82,54 +86,172 @@ export async function createOrder(orderData: OrderData) {
     return { orderId, trackingNumber };
   } catch (error) {
     console.error('Error processing order:', error);
-    // Generate a fake order ID for fallback
-    return { 
-      orderId: 'ORD' + Math.floor(Math.random() * 10000000),
-      trackingNumber: 'TRK' + Math.floor(Math.random() * 100000000)
-    };
+    throw error;
   }
 }
 
-export async function getOrderByTrackingId(trackingId: string) {
+export function generateTrackingNumber() {
+  return 'TRK' + Math.floor(Math.random() * 100000000);
+}
+
+export async function getOrderByTrackingNumber(trackingNumber: string) {
   try {
     const { data, error } = await supabase
       .from('shipping')
       .select(`
         *,
-        orders!inner(*)
+        orders(*)
       `)
-      .eq('tracking_number', trackingId)
+      .eq('tracking_number', trackingNumber)
       .single();
 
-    if (error || !data) {
+    if (error) {
+      console.error('Error fetching order by tracking number:', error);
       throw error;
     }
 
     return data;
   } catch (error) {
-    console.error('Error fetching order by tracking ID:', error);
-    return null;
+    console.error('Error in getOrderByTrackingNumber:', error);
+    throw error;
   }
 }
 
 export async function getOrderById(orderId: string) {
   try {
-    const { data, error } = await supabase
+    // First, get the order details
+    const { data: orderData, error: orderError } = await supabase
       .from('orders')
-      .select(`
-        *,
-        order_items(*, products(*))
-      `)
+      .select('*')
       .eq('id', orderId)
       .single();
 
-    if (error || !data) {
+    if (orderError) {
+      console.error('Error fetching order by ID:', orderError);
+      throw orderError;
+    }
+
+    // Get shipping information
+    const { data: shippingData, error: shippingError } = await supabase
+      .from('shipping')
+      .select('*')
+      .eq('order_id', orderId)
+      .single();
+
+    if (shippingError && shippingError.code !== 'PGRST116') {
+      console.error('Error fetching shipping information:', shippingError);
+      throw shippingError;
+    }
+
+    // Get order items
+    const { data: orderItems, error: itemsError } = await supabase
+      .from('order_items')
+      .select('*')
+      .eq('order_id', orderId);
+
+    if (itemsError) {
+      console.error('Error fetching order items:', itemsError);
+      throw itemsError;
+    }
+
+    // Combine all data
+    return {
+      order: orderData,
+      shipping: shippingData || null,
+      items: orderItems || []
+    };
+  } catch (error) {
+    console.error('Error in getOrderById:', error);
+    throw error;
+  }
+}
+
+export async function updateOrderStatus(orderId: string, status: string) {
+  try {
+    const { error } = await supabase
+      .from('orders')
+      .update({ status: status })
+      .eq('id', orderId);
+
+    if (error) {
+      console.error('Error updating order status:', error);
       throw error;
     }
 
-    return data;
+    return true;
   } catch (error) {
-    console.error('Error fetching order by ID:', error);
-    return null;
+    console.error('Error in updateOrderStatus:', error);
+    throw error;
+  }
+}
+
+export async function updateShippingStatus(orderId: string, status: string) {
+  try {
+    const updates: any = { status };
+    
+    // Update timestamps based on status
+    if (status === 'shipped') {
+      updates.shipped_at = new Date().toISOString();
+    } else if (status === 'delivered') {
+      updates.delivered_at = new Date().toISOString();
+    }
+
+    const { error } = await supabase
+      .from('shipping')
+      .update(updates)
+      .eq('order_id', orderId);
+
+    if (error) {
+      console.error('Error updating shipping status:', error);
+      throw error;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in updateShippingStatus:', error);
+    throw error;
+  }
+}
+
+export async function searchOrder(searchTerm: string) {
+  try {
+    // First try to find by tracking number
+    const { data: trackingData, error: trackingError } = await supabase
+      .from('shipping')
+      .select(`
+        *,
+        orders(*)
+      `)
+      .eq('tracking_number', searchTerm);
+
+    if (!trackingError && trackingData && trackingData.length > 0) {
+      return { 
+        found: true, 
+        type: 'tracking',
+        data: trackingData[0]
+      };
+    }
+
+    // Then try to find by order ID
+    const { data: orderData, error: orderError } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        shipping(*)
+      `)
+      .eq('id', searchTerm);
+
+    if (!orderError && orderData && orderData.length > 0) {
+      return { 
+        found: true, 
+        type: 'order',
+        data: orderData[0]
+      };
+    }
+
+    return { found: false };
+  } catch (error) {
+    console.error('Error searching for order:', error);
+    throw error;
   }
 }

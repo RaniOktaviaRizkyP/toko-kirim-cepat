@@ -1,11 +1,16 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { ShoppingCart, User } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { ShoppingCart, User, Package } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 
 const Navbar = () => {
   const { itemCount } = useCart();
+  const location = useLocation();
+  
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
 
   return (
     <nav className="bg-white shadow-sm py-4 sticky top-0 z-50">
@@ -13,9 +18,24 @@ const Navbar = () => {
         <Link to="/" className="text-2xl font-bold text-shop-primary">ShopPurple</Link>
         
         <div className="flex items-center space-x-8">
-          <Link to="/" className="text-gray-700 hover:text-shop-primary transition-colors">Home</Link>
-          <Link to="/products" className="text-gray-700 hover:text-shop-primary transition-colors">Products</Link>
-          <Link to="/tracking" className="text-gray-700 hover:text-shop-primary transition-colors">Track Order</Link>
+          <Link to="/" 
+            className={`text-gray-700 hover:text-shop-primary transition-colors ${
+              isActive('/') ? 'text-shop-primary font-medium' : ''
+            }`}>
+            Home
+          </Link>
+          <Link to="/products" 
+            className={`text-gray-700 hover:text-shop-primary transition-colors ${
+              isActive('/products') ? 'text-shop-primary font-medium' : ''
+            }`}>
+            Products
+          </Link>
+          <Link to="/tracking" 
+            className={`text-gray-700 hover:text-shop-primary transition-colors flex items-center ${
+              isActive('/tracking') ? 'text-shop-primary font-medium' : ''
+            }`}>
+            <Package className="h-4 w-4 mr-1" /> Track Order
+          </Link>
           
           <Link to="/cart" className="relative">
             <ShoppingCart className="h-6 w-6 text-gray-700 hover:text-shop-primary transition-colors" />
