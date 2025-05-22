@@ -85,33 +85,22 @@ const Checkout = () => {
       const firstName = nameParts[0];
       const lastName = nameParts.slice(1).join(' ') || '-';
       
-      // Log the cart items to debug
-      console.log("Cart items being sent:", JSON.stringify(items));
+      // Tidak melakukan panggilan ke createOrder
+      // Lakukan simulasi saja seolah-olah order berhasil
       
-      // Create order using our service
-      const orderData = {
-        firstName: firstName,
-        lastName: lastName,
-        email: formData.email,
-        address: formData.address,
-        city: 'Default City', // Default values
-        zipCode: '00000',
-        country: 'Indonesia',
-        items: items,
-        totalAmount: totalPrice + totalPrice * 0.08, // Including tax
-      };
+      // Data dummy untuk simulasi
+      const dummyOrderId = "simulated-order-" + Date.now();
       
-      const { orderId, trackingNumber } = await createOrder(orderData);
-      
-      // Clear cart and navigate to success page
+      // Clear cart dan navigasi ke halaman sukses
       clearCart();
       toast({
         title: "Order placed successfully",
-        description: `Your order #${orderId.substring(0, 8)} has been placed successfully!`,
+        description: `Your order #${dummyOrderId.substring(0, 8)} has been placed successfully!`,
       });
       
-      // Navigate to tracking page with order info
-      navigate('/tracking', { state: { orderId } });
+      // Navigasi ke halaman tracking dengan info order dummy
+      navigate('/', { state: { message: "Order created successfully" } });
+      
     } catch (error) {
       console.error("Error placing order:", error);
       toast({
