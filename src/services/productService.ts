@@ -29,7 +29,7 @@ export async function fetchProducts(): Promise<Product[]> {
   }
 }
 
-export async function fetchProductById(id: string | number): Promise<Product | null> {
+export async function fetchProductById(id: string): Promise<Product | null> {
   try {
     const { data, error } = await supabase
       .from('products')

@@ -1,6 +1,6 @@
 
 export interface Product {
-  id: number;
+  id: string;
   name: string;
   price: number;
   image: string;
@@ -11,7 +11,7 @@ export interface Product {
 
 export const products: Product[] = [
   {
-    id: 1,
+    id: "1",
     name: "Premium Headphones",
     price: 249.99,
     image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8aGVhZHBob25lc3xlbnwwfHwwfHx8MA%3D%3D",
@@ -20,7 +20,7 @@ export const products: Product[] = [
     featured: true
   },
   {
-    id: 2,
+    id: "2",
     name: "Smartwatch Pro",
     price: 199.99,
     image: "https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c21hcnR3YXRjaHxlbnwwfHwwfHx8MA%3D%3D",
@@ -29,7 +29,7 @@ export const products: Product[] = [
     featured: true
   },
   {
-    id: 3,
+    id: "3",
     name: "Laptop Backpack",
     price: 79.99,
     image: "https://images.unsplash.com/photo-1622560480654-d96214fdc887?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8bGFwdG9wJTIwYmFja3BhY2t8ZW58MHx8MHx8fDA%3D",
@@ -38,7 +38,7 @@ export const products: Product[] = [
     featured: true
   },
   {
-    id: 4,
+    id: "4",
     name: "Wireless Mouse",
     price: 39.99,
     image: "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8d2lyZWxlc3MlMjBtb3VzZXxlbnwwfHwwfHx8MA%3D%3D",
@@ -46,7 +46,7 @@ export const products: Product[] = [
     category: "Electronics"
   },
   {
-    id: 5,
+    id: "5",
     name: "Bluetooth Speaker",
     price: 89.99,
     image: "https://images.unsplash.com/photo-1589003077984-894e133dabab?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8YmxldXRvb3RoJTIwc3BlYWtlcnxlbnwwfHwwfHx8MA%3D%3D",
@@ -54,7 +54,7 @@ export const products: Product[] = [
     category: "Electronics"
   },
   {
-    id: 6,
+    id: "6",
     name: "Classic T-Shirt",
     price: 24.99,
     image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8dHNoaXJ0fGVufDB8fDB8fHww",
@@ -62,7 +62,7 @@ export const products: Product[] = [
     category: "Clothing"
   },
   {
-    id: 7,
+    id: "7",
     name: "Coffee Mug",
     price: 14.99,
     image: "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8Y29mZmVlJTIwbXVnfGVufDB8fDB8fHww",
@@ -70,7 +70,7 @@ export const products: Product[] = [
     category: "Home"
   },
   {
-    id: 8,
+    id: "8",
     name: "Desk Lamp",
     price: 49.99,
     image: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8ZGVzayUyMGxhbXB8ZW58MHx8MHx8fDA%3D",
@@ -80,7 +80,7 @@ export const products: Product[] = [
   }
 ];
 
-export function getProductById(id: number): Product | undefined {
+export function getProductById(id: string): Product | undefined {
   return products.find(product => product.id === id);
 }
 
