@@ -24,7 +24,7 @@ const fetchFeaturedProducts = async (): Promise<Product[]> => {
     .from('products')
     .select('*')
     .eq('featured', true)
-    .limit(3);
+    .limit(4);  // Mengubah limit dari 3 menjadi 4
   
   if (error) throw error;
   return data || [];
@@ -40,24 +40,24 @@ const Index = () => {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       
-      <div className="relative bg-gradient-to-r from-shop-dark to-shop-primary text-white py-20">
+      <section className="bg-gradient-to-r from-shop-light to-white py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">Welcome to ShopPurple</h1>
-            <p className="text-xl mb-6">
-              Discover quality products for your everyday needs. From electronics to home goods, we've got you covered.
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
+              Welcome to ShopPurple
+            </h1>
+            <p className="text-xl text-gray-600 mb-8">
+              Discover amazing products with free shipping and easy returns.
             </p>
-            <Link to="/products">
-              <Button size="lg" className="bg-white text-shop-primary hover:bg-gray-100">
-                Shop Now
-              </Button>
+            <Link 
+              to="/products"
+              className="inline-flex items-center px-6 py-3 bg-shop-primary text-white rounded-md hover:bg-shop-primary/90 transition-all duration-300"
+            >
+              Shop Now <ArrowRight className="ml-2 w-5 h-5" />
             </Link>
           </div>
         </div>
-        <div className="absolute bottom-0 right-0 w-1/3 h-full bg-opacity-20 hidden lg:block">
-          {/* Optional decorative element */}
-        </div>
-      </div>
+      </section>
 
       <div className="container mx-auto px-4 py-16">
         <div className="flex items-center justify-between mb-8">
@@ -72,7 +72,7 @@ const Index = () => {
             <p className="text-xl">Loading featured products...</p>
           </div>
         ) : featuredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

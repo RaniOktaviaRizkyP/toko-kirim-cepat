@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ShoppingCart, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -85,14 +85,13 @@ const ProductDetail = () => {
       <Navbar />
       
       <div className="container mx-auto px-4 py-8 flex-1">
-        <Button 
-          variant="ghost" 
-          onClick={handleGoBack} 
-          className="mb-4 flex items-center"
+        <Link 
+          to="/products" 
+          className="flex items-center text-shop-primary hover:underline mb-4"
         >
-          <ChevronLeft className="mr-1" />
-          Back
-        </Button>
+          <ChevronLeft className="mr-2 h-4 w-4" />
+          Back to Products
+        </Link>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="relative">

@@ -59,8 +59,8 @@ const Navbar = () => {
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <User className="h-6 w-6 text-gray-700 hover:text-shop-primary transition-colors" />
+                <Button variant="ghost" size="icon" className="hover:bg-transparent">
+                  <User className="h-8 w-8 text-gray-700 hover:text-shop-primary/80 transition-colors" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -91,9 +91,7 @@ const Navbar = () => {
             </DropdownMenu>
           ) : (
             <Link to="/auth">
-              <Button variant="ghost" size="icon">
-                <User className="h-6 w-6 text-gray-700 hover:text-shop-primary transition-colors" />
-              </Button>
+              <User className="h-8 w-8 text-gray-700 hover:text-shop-primary/80 transition-colors" />
             </Link>
           )}
         </div>
