@@ -61,19 +61,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = async (userId: string) => {
     console.log('Fetching profile for user:', userId);
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', userId)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', userId)
+        .single();
 
-    if (error) {
-      console.error('Error fetching profile:', error);
-      return;
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return;
+      }
+
+      console.log('Profile data:', data);
+      setIsAdmin(!!data?.is_admin);
+    } catch (err) {
+      console.error('Exception when fetching profile:', err);
     }
-
-    console.log('Profile data:', data);
-    setIsAdmin(!!data?.is_admin);
   };
 
   const signUp = async (email: string, password: string) => {
@@ -94,20 +98,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { error };
       }
 
-      // Check if we need to create a profile for this user
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({ id: data.user.id, email: data.user.email, is_admin: false });
-          
-        if (profileError) {
-          console.error('Error creating profile:', profileError);
-        }
-      }
-
       toast({
         title: "Registration successful",
-        description: "Welcome to ShopPurple! Please check your email to verify your account.",
+        description: "Account created! You can now log in.",
       });
 
       return { error: null };

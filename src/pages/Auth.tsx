@@ -13,6 +13,7 @@ import { useAuth } from '../context/AuthContext';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { Loader2 } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Valid email is required' }),
@@ -32,8 +33,10 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 const Auth = () => {
   const { user, signIn, signUp } = useAuth();
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<string>('login');
   const [loginError, setLoginError] = useState<string | null>(null);
   const [registerError, setRegisterError] = useState<string | null>(null);
+  const [registerSuccess, setRegisterSuccess] = useState<string | null>(null);
   const location = useLocation();
   const from = location.state?.from?.pathname || '/';
 
@@ -58,14 +61,17 @@ const Auth = () => {
   useEffect(() => {
     setLoginError(null);
     setRegisterError(null);
-  }, [location.search]);
+    setRegisterSuccess(null);
+  }, [activeTab]);
 
   const handleLogin = async (values: LoginFormValues) => {
     setIsLoading(true);
     setLoginError(null);
     try {
+      console.log('Attempting login with:', values.email);
       const { error } = await signIn(values.email, values.password);
       if (error) {
+        console.log('Login error:', error.message);
         setLoginError(error.message);
       }
     } finally {
@@ -76,10 +82,21 @@ const Auth = () => {
   const handleRegister = async (values: RegisterFormValues) => {
     setIsLoading(true);
     setRegisterError(null);
+    setRegisterSuccess(null);
     try {
+      console.log('Attempting registration with:', values.email);
       const { error } = await signUp(values.email, values.password);
+      
       if (error) {
+        console.log('Registration error:', error.message);
         setRegisterError(error.message);
+      } else {
+        setRegisterSuccess('Registration successful! You can now log in.');
+        registerForm.reset();
+        // Switch to login tab after successful registration
+        setTimeout(() => {
+          setActiveTab('login');
+        }, 2000);
       }
     } finally {
       setIsLoading(false);
@@ -95,7 +112,11 @@ const Auth = () => {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <div className="flex-1 flex items-center justify-center p-4">
-        <Tabs defaultValue="login" className="w-full max-w-md">
+        <Tabs 
+          value={activeTab} 
+          onValueChange={setActiveTab}
+          className="w-full max-w-md"
+        >
           <TabsList className="grid grid-cols-2 mb-4">
             <TabsTrigger value="login">Login</TabsTrigger>
             <TabsTrigger value="register">Register</TabsTrigger>
@@ -143,7 +164,12 @@ const Auth = () => {
                       )}
                     />
                     <Button type="submit" className="w-full bg-shop-primary" disabled={isLoading}>
-                      {isLoading ? 'Logging in...' : 'Login'}
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Logging in...
+                        </>
+                      ) : 'Login'}
                     </Button>
                   </form>
                 </Form>
@@ -162,6 +188,11 @@ const Auth = () => {
                 {registerError && (
                   <Alert variant="destructive" className="mb-4">
                     <AlertDescription>{registerError}</AlertDescription>
+                  </Alert>
+                )}
+                {registerSuccess && (
+                  <Alert className="mb-4 bg-green-50 text-green-800 border-green-300">
+                    <AlertDescription>{registerSuccess}</AlertDescription>
                   </Alert>
                 )}
                 <Form {...registerForm}>
@@ -206,7 +237,12 @@ const Auth = () => {
                       )}
                     />
                     <Button type="submit" className="w-full bg-shop-primary" disabled={isLoading}>
-                      {isLoading ? 'Registering...' : 'Register'}
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Registering...
+                        </>
+                      ) : 'Register'}
                     </Button>
                   </form>
                 </Form>
