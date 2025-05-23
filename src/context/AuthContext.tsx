@@ -21,12 +21,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const toast = useToast();
+  const { toast } = useToast();
 
   useEffect(() => {
     // Set up the auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -43,6 +44,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -58,6 +60,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const fetchUserProfile = async (userId: string) => {
+    console.log('Fetching profile for user:', userId);
     const { data, error } = await supabase
       .from('profiles')
       .select('is_admin')
@@ -69,18 +72,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
+    console.log('Profile data:', data);
     setIsAdmin(!!data?.is_admin);
   };
 
   const signUp = async (email: string, password: string) => {
     try {
+      console.log('Signing up user:', email);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
       });
 
       if (error) {
-        toast.toast({
+        console.error('Signup error:', error);
+        toast({
           title: "Registration failed",
           description: error.message,
           variant: "destructive",
@@ -88,7 +94,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { error };
       }
 
-      toast.toast({
+      // Check if we need to create a profile for this user
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({ id: data.user.id, email: data.user.email, is_admin: false });
+          
+        if (profileError) {
+          console.error('Error creating profile:', profileError);
+        }
+      }
+
+      toast({
         title: "Registration successful",
         description: "Welcome to ShopPurple! Please check your email to verify your account.",
       });
@@ -102,13 +119,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log('Signing in user:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        toast.toast({
+        console.error('Login error:', error);
+        toast({
           title: "Login failed",
           description: error.message,
           variant: "destructive",
@@ -116,7 +135,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { error };
       }
 
-      toast.toast({
+      console.log('Login successful, user:', data.user?.email);
+      toast({
         title: "Login successful",
         description: "Welcome back!",
       });
@@ -130,7 +150,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    toast.toast({
+    toast({
       title: "Signed out",
       description: "You have been signed out successfully.",
     });

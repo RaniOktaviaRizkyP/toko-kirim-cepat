@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useAuth } from '../context/AuthContext';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
@@ -31,6 +32,8 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 const Auth = () => {
   const { user, signIn, signUp } = useAuth();
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [registerError, setRegisterError] = useState<string | null>(null);
   const location = useLocation();
   const from = location.state?.from?.pathname || '/';
 
@@ -51,10 +54,20 @@ const Auth = () => {
     },
   });
 
+  // Clear errors when switching tabs
+  useEffect(() => {
+    setLoginError(null);
+    setRegisterError(null);
+  }, [location.search]);
+
   const handleLogin = async (values: LoginFormValues) => {
     setIsLoading(true);
+    setLoginError(null);
     try {
-      await signIn(values.email, values.password);
+      const { error } = await signIn(values.email, values.password);
+      if (error) {
+        setLoginError(error.message);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -62,8 +75,12 @@ const Auth = () => {
 
   const handleRegister = async (values: RegisterFormValues) => {
     setIsLoading(true);
+    setRegisterError(null);
     try {
-      await signUp(values.email, values.password);
+      const { error } = await signUp(values.email, values.password);
+      if (error) {
+        setRegisterError(error.message);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -92,6 +109,11 @@ const Auth = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                {loginError && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertDescription>{loginError}</AlertDescription>
+                  </Alert>
+                )}
                 <Form {...loginForm}>
                   <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
                     <FormField
@@ -137,6 +159,11 @@ const Auth = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                {registerError && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertDescription>{registerError}</AlertDescription>
+                  </Alert>
+                )}
                 <Form {...registerForm}>
                   <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4">
                     <FormField
