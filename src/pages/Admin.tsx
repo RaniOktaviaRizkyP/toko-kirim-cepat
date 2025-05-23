@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PlusCircle, Pencil, Trash2 } from 'lucide-react';
@@ -125,9 +126,19 @@ const AdminProducts = () => {
   // Mutations
   const addProductMutation = useMutation({
     mutationFn: async (product: ProductFormValues) => {
+      // Ensure all required fields are non-optional before inserting
+      const productToInsert = {
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        image: product.image,
+        category: product.category,
+        featured: product.featured || false
+      };
+      
       const { data, error } = await supabase
         .from('products')
-        .insert([product])
+        .insert([productToInsert])
         .select()
         .single();
       
@@ -153,9 +164,19 @@ const AdminProducts = () => {
 
   const updateProductMutation = useMutation({
     mutationFn: async ({ id, ...product }: Product) => {
+      // Ensure all required fields are non-optional before updating
+      const productToUpdate = {
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        image: product.image,
+        category: product.category,
+        featured: product.featured || false
+      };
+      
       const { data, error } = await supabase
         .from('products')
-        .update(product)
+        .update(productToUpdate)
         .eq('id', id)
         .select()
         .single();
