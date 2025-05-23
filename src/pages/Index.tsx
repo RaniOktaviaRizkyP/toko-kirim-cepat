@@ -1,114 +1,126 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
-import ProductCard from '../components/ProductCard';
-import { getFeaturedProducts } from '../data/products';
+import { useQuery } from '@tanstack/react-query';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import ProductCard from '../components/ProductCard';
+import { Button } from '@/components/ui/button';
+import { ArrowRight } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  description: string;
+  category: string;
+  featured?: boolean;
+}
+
+const fetchFeaturedProducts = async (): Promise<Product[]> => {
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('featured', true)
+    .limit(3);
+  
+  if (error) throw error;
+  return data || [];
+};
 
 const Index = () => {
-  const featuredProducts = getFeaturedProducts();
+  const { data: featuredProducts = [], isLoading } = useQuery({
+    queryKey: ['featuredProducts'],
+    queryFn: fetchFeaturedProducts,
+  });
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex flex-col min-h-screen">
       <Navbar />
       
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-shop-light to-white py-16">
+      <div className="relative bg-gradient-to-r from-shop-dark to-shop-primary text-white py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
-              Welcome to ShopPurple
-            </h1>
-            <p className="text-xl text-gray-600 mb-8">
-              Discover amazing products with free shipping and easy returns.
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">Welcome to ShopPurple</h1>
+            <p className="text-xl mb-6">
+              Discover quality products for your everyday needs. From electronics to home goods, we've got you covered.
             </p>
-            <Link 
-              to="/products"
-              className="btn-primary inline-flex items-center"
-            >
-              Shop Now <ArrowRight className="ml-2 w-5 h-5" />
+            <Link to="/products">
+              <Button size="lg" className="bg-white text-shop-primary hover:bg-gray-100">
+                Shop Now
+              </Button>
             </Link>
           </div>
         </div>
-      </section>
+        <div className="absolute bottom-0 right-0 w-1/3 h-full bg-opacity-20 hidden lg:block">
+          {/* Optional decorative element */}
+        </div>
+      </div>
 
-      {/* Featured Products */}
-      <section className="py-12">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold">Featured Products</h2>
-            <Link to="/products" className="text-shop-primary hover:underline flex items-center">
-              View All <ArrowRight className="ml-1 w-4 h-4" />
-            </Link>
+      <div className="container mx-auto px-4 py-16">
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-3xl font-bold">Featured Products</h2>
+          <Link to="/products" className="flex items-center text-shop-primary hover:underline">
+            View all <ArrowRight className="ml-2 h-4 w-4" />
+          </Link>
+        </div>
+        
+        {isLoading ? (
+          <div className="text-center py-12">
+            <p className="text-xl">Loading featured products...</p>
           </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts.map(product => (
+        ) : featuredProducts.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {featuredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
-        </div>
-      </section>
-      
-      {/* Features */}
-      <section className="py-12 bg-gray-50">
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-xl">No featured products found</p>
+          </div>
+        )}
+      </div>
+
+      <div className="bg-gray-100 py-16">
         <div className="container mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-bold mb-8 text-center">Why Shop With Us</h2>
-          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white p-6 rounded-lg shadow-sm text-center">
-              <div className="w-12 h-12 bg-shop-light rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-shop-primary"><path d="M22 12L3 12"></path><path d="M15 5L22 12L15 19"></path></svg>
+            <div className="p-6 bg-white rounded-lg shadow-sm flex flex-col items-center text-center">
+              <div className="rounded-full bg-shop-light p-4 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-shop-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Free & Fast Delivery</h3>
-              <p className="text-gray-600">Free shipping on all orders over $50 with delivery in 2-3 business days.</p>
+              <h3 className="text-xl font-semibold mb-2">Free Shipping</h3>
+              <p className="text-gray-600">On all orders over $50</p>
             </div>
             
-            <div className="bg-white p-6 rounded-lg shadow-sm text-center">
-              <div className="w-12 h-12 bg-shop-light rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-shop-primary"><path d="M12 9v4l2 2"></path><path d="M5 7.2A2.2 2.2 0 0 1 7.2 5h9.6A2.2 2.2 0 0 1 19 7.2v9.6a2.2 2.2 0 0 1-2.2 2.2H7.2A2.2 2.2 0 0 1 5 16.8V7.2z"></path><path d="M12 21v-2"></path><path d="M17 16.5V19"></path><path d="M7 16.5V19"></path></svg>
+            <div className="p-6 bg-white rounded-lg shadow-sm flex flex-col items-center text-center">
+              <div className="rounded-full bg-shop-light p-4 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-shop-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Money Back Guarantee</h3>
-              <p className="text-gray-600">Not satisfied with your purchase? Return it within 30 days for a full refund.</p>
+              <h3 className="text-xl font-semibold mb-2">Quality Guarantee</h3>
+              <p className="text-gray-600">30-day money-back guarantee</p>
             </div>
             
-            <div className="bg-white p-6 rounded-lg shadow-sm text-center">
-              <div className="w-12 h-12 bg-shop-light rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-shop-primary"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3z"></path><path d="M8 17v1a3 3 0 0 0 6 0v-1"></path></svg>
+            <div className="p-6 bg-white rounded-lg shadow-sm flex flex-col items-center text-center">
+              <div className="rounded-full bg-shop-light p-4 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-shop-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
-              <h3 className="text-xl font-semibold mb-2">24/7 Customer Support</h3>
-              <p className="text-gray-600">Our support team is always available to help with any questions or concerns.</p>
+              <h3 className="text-xl font-semibold mb-2">24/7 Support</h3>
+              <p className="text-gray-600">Get help whenever you need it</p>
             </div>
           </div>
         </div>
-      </section>
+      </div>
       
-      {/* Newsletter */}
-      <section className="py-12 bg-shop-primary text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">Join Our Newsletter</h2>
-          <p className="text-shop-light mb-6 max-w-xl mx-auto">
-            Subscribe to get special offers, free giveaways, and once-in-a-lifetime deals.
-          </p>
-          
-          <form className="max-w-md mx-auto flex flex-col sm:flex-row gap-2">
-            <input 
-              type="email" 
-              placeholder="Your email address" 
-              className="flex-grow px-4 py-3 rounded-md text-gray-900 focus:outline-none"
-            />
-            <button 
-              type="submit" 
-              className="bg-shop-secondary hover:bg-shop-accent text-white px-6 py-3 rounded-md transition-colors"
-            >
-              Subscribe
-            </button>
-          </form>
-        </div>
-      </section>
-
       <Footer />
     </div>
   );

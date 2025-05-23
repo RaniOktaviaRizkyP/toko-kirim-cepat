@@ -1,120 +1,136 @@
 
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ShoppingCart, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { ShoppingCart, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getProductById } from '../data/products';
-import { useCart } from '../context/CartContext';
+import { useToast } from '@/components/ui/use-toast';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { useCart } from '../context/CartContext';
+import { fetchProductById } from '../services/productService';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const product = getProductById(parseInt(id || '0'));
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
   
-  if (!product) {
+  const { data: product, isLoading, isError, error } = useQuery({
+    queryKey: ['product', id],
+    queryFn: () => fetchProductById(id!),
+    enabled: !!id,
+  });
+  
+  useEffect(() => {
+    if (isError) {
+      toast({
+        title: "Error",
+        description: "Failed to load product. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [isError, toast]);
+  
+  const handleAddToCart = () => {
+    if (product) {
+      addItem(product, quantity);
+      toast({
+        title: "Added to cart",
+        description: `${quantity} x ${product.name} has been added to your cart.`,
+      });
+    }
+  };
+  
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value);
+    setQuantity(isNaN(value) || value < 1 ? 1 : value);
+  };
+  
+  const handleGoBack = () => {
+    navigate(-1);
+  };
+  
+  if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <div className="container mx-auto px-4 py-12 flex-grow">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-4">Product Not Found</h2>
-            <p className="mb-6">Sorry, we couldn't find the product you're looking for.</p>
-            <Link to="/products" className="btn-primary">
-              Back to Products
-            </Link>
-          </div>
+        <div className="flex-1 flex justify-center items-center">
+          <p className="text-xl">Loading product...</p>
         </div>
         <Footer />
       </div>
     );
   }
   
-  const handleAddToCart = () => {
-    addItem(product, quantity);
-  };
+  if (!product) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex flex-col justify-center items-center py-12">
+          <h2 className="text-2xl font-bold mb-4">Product Not Found</h2>
+          <p className="text-gray-600 mb-6">The product you're looking for doesn't exist or has been removed.</p>
+          <Button onClick={() => navigate('/products')}>
+            Browse Products
+          </Button>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
   
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
-      <div className="container mx-auto px-4 py-8">
-        <Link to="/products" className="inline-flex items-center text-shop-primary hover:underline mb-6">
-          <ArrowLeft className="w-4 h-4 mr-1" /> Back to Products
-        </Link>
+      <div className="container mx-auto px-4 py-8 flex-1">
+        <Button 
+          variant="ghost" 
+          onClick={handleGoBack} 
+          className="mb-4 flex items-center"
+        >
+          <ChevronLeft className="mr-1" />
+          Back
+        </Button>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Product Image */}
-          <div className="bg-white rounded-lg overflow-hidden shadow-md">
+          <div className="relative">
             <img 
               src={product.image} 
               alt={product.name} 
-              className="w-full h-full object-contain"
-              style={{ minHeight: '400px' }}
+              className="w-full h-auto object-cover rounded-lg"
             />
           </div>
           
-          {/* Product Details */}
-          <div>
-            <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
-            <p className="text-gray-500 mb-4">{product.category}</p>
+          <div className="space-y-6">
+            <h1 className="text-3xl font-bold">{product.name}</h1>
+            <div className="text-2xl font-bold">${Number(product.price).toFixed(2)}</div>
+            <p className="text-gray-600 text-sm">{product.category}</p>
             
-            <div className="text-2xl font-bold mb-6">${product.price.toFixed(2)}</div>
-            
-            <p className="text-gray-700 mb-6">{product.description}</p>
-            
-            <div className="mb-6">
-              <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-1">
-                Quantity
-              </label>
-              <div className="flex items-center">
-                <button 
-                  className="px-3 py-1 border rounded-l-md bg-gray-100 hover:bg-gray-200"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                >
-                  -
-                </button>
-                <input
-                  type="number"
-                  id="quantity"
-                  min="1"
-                  value={quantity}
-                  onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-16 border-y px-3 py-1 text-center"
-                />
-                <button 
-                  className="px-3 py-1 border rounded-r-md bg-gray-100 hover:bg-gray-200"
-                  onClick={() => setQuantity(quantity + 1)}
-                >
-                  +
-                </button>
-              </div>
+            <div className="border-t border-b py-4">
+              <p className="text-gray-700">{product.description}</p>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button 
-                className="bg-shop-primary hover:bg-shop-secondary flex-1"
-                onClick={handleAddToCart}
-                size="lg"
-              >
-                <ShoppingCart className="w-5 h-5 mr-2" />
-                Add to Cart
-              </Button>
-              
-              <Link to="/cart" className="btn-secondary text-center flex items-center justify-center flex-1">
-                View Cart
-              </Link>
+            <div className="flex items-center space-x-4">
+              <label htmlFor="quantity" className="font-medium">Quantity</label>
+              <input
+                id="quantity"
+                type="number"
+                min="1"
+                value={quantity}
+                onChange={handleQuantityChange}
+                className="border rounded p-2 w-20"
+              />
             </div>
             
-            <div className="mt-8 border-t pt-6">
-              <h3 className="font-medium mb-2">Shipping & Returns</h3>
-              <p className="text-gray-600 text-sm">
-                Free shipping on orders over $50. Standard delivery 3-5 business days.
-                Free returns within 30 days.
-              </p>
-            </div>
+            <Button 
+              onClick={handleAddToCart} 
+              className="w-full md:w-auto bg-shop-primary"
+            >
+              <ShoppingCart className="mr-2" />
+              Add to Cart
+            </Button>
           </div>
         </div>
       </div>

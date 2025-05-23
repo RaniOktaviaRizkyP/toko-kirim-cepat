@@ -2,9 +2,18 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { Product } from '../data/products';
 import { Button } from '@/components/ui/button';
 import { ShoppingCart } from 'lucide-react';
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  description: string;
+  category: string;
+  featured?: boolean;
+}
 
 interface ProductCardProps {
   product: Product;
@@ -33,7 +42,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <h3 className="text-lg font-medium">{product.name}</h3>
           <p className="text-gray-500 text-sm mb-2">{product.category}</p>
           <div className="flex justify-between items-center">
-            <span className="font-bold">${product.price.toFixed(2)}</span>
+            <span className="font-bold">${Number(product.price).toFixed(2)}</span>
             <Button 
               onClick={handleAddToCart} 
               size="sm" 

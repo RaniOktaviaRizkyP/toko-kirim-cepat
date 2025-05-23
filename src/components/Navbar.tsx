@@ -1,11 +1,21 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingCart, User, Package } from 'lucide-react';
+import { ShoppingCart, User, Package, LogOut, ShieldCheck } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
+import { Button } from '@/components/ui/button';
+import { 
+  DropdownMenu, 
+  DropdownMenuTrigger, 
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu';
 
 const Navbar = () => {
   const { itemCount } = useCart();
+  const { user, signOut, isAdmin } = useAuth();
   const location = useLocation();
   
   const isActive = (path: string) => {
@@ -46,9 +56,46 @@ const Navbar = () => {
             )}
           </Link>
           
-          <Link to="/auth" className="text-gray-700 hover:text-shop-primary transition-colors">
-            <User className="h-6 w-6" />
-          </Link>
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <User className="h-6 w-6 text-gray-700 hover:text-shop-primary transition-colors" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="flex items-center justify-start gap-2 p-2">
+                  <div className="flex flex-col space-y-0.5">
+                    <p className="text-sm font-medium">{user.email}</p>
+                    <p className="text-xs text-gray-500">
+                      {isAdmin ? 'Administrator' : 'Customer'}
+                    </p>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin" className="flex cursor-pointer items-center">
+                      <ShieldCheck className="mr-2 h-4 w-4" />
+                      <span>Admin Dashboard</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem asChild onClick={signOut}>
+                  <div className="flex cursor-pointer items-center text-red-500">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link to="/auth">
+              <Button variant="ghost" size="icon">
+                <User className="h-6 w-6 text-gray-700 hover:text-shop-primary transition-colors" />
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </nav>

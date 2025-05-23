@@ -1,24 +1,61 @@
 
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ProductCard from '../components/ProductCard';
-import { products } from '../data/products';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  description: string;
+  category: string;
+  featured?: boolean;
+}
+
+const fetchProducts = async () => {
+  const { data, error } = await supabase
+    .from('products')
+    .select('*');
+  
+  if (error) {
+    throw error;
+  }
+  
+  return data || [];
+};
 
 const Products = () => {
   const location = useLocation();
+  const { toast } = useToast();
   const queryParams = new URLSearchParams(location.search);
   const categoryFilter = queryParams.get('category');
   
-  const [filteredProducts, setFilteredProducts] = useState(products);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(categoryFilter || 'All');
   const [sortBy, setSortBy] = useState('');
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<string[]>(['All']);
   
-  // Get unique categories
-  const categories = ['All', ...new Set(products.map(product => product.category))];
+  const { data: products = [], isLoading, isError, error } = useQuery({
+    queryKey: ['products'],
+    queryFn: fetchProducts,
+  });
   
+  // Extract unique categories
+  useEffect(() => {
+    if (products.length > 0) {
+      const uniqueCategories = ['All', ...new Set(products.map(product => product.category))];
+      setCategories(uniqueCategories);
+    }
+  }, [products]);
+  
+  // Filter and sort products
   useEffect(() => {
     let result = [...products];
     
@@ -37,9 +74,9 @@ const Products = () => {
     
     // Sort products
     if (sortBy === 'priceLow') {
-      result = result.sort((a, b) => a.price - b.price);
+      result = result.sort((a, b) => Number(a.price) - Number(b.price));
     } else if (sortBy === 'priceHigh') {
-      result = result.sort((a, b) => b.price - a.price);
+      result = result.sort((a, b) => Number(b.price) - Number(a.price));
     } else if (sortBy === 'nameAZ') {
       result = result.sort((a, b) => a.name.localeCompare(b.name));
     } else if (sortBy === 'nameZA') {
@@ -47,7 +84,18 @@ const Products = () => {
     }
     
     setFilteredProducts(result);
-  }, [selectedCategory, searchTerm, sortBy]);
+  }, [selectedCategory, searchTerm, sortBy, products]);
+  
+  // Display error if fetching products fails
+  useEffect(() => {
+    if (isError && error) {
+      toast({
+        title: "Error loading products",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  }, [isError, error, toast]);
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -104,7 +152,11 @@ const Products = () => {
           
           {/* Products */}
           <div className="w-full md:w-3/4">
-            {filteredProducts.length > 0 ? (
+            {isLoading ? (
+              <div className="text-center py-12">
+                <p className="text-xl">Loading products...</p>
+              </div>
+            ) : filteredProducts.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredProducts.map(product => (
                   <ProductCard key={product.id} product={product} />
