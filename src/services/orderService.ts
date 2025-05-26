@@ -24,48 +24,18 @@ interface OrderData {
   totalAmount: number;
 }
 
-// Order response interfaces for consistent typing
-interface OrderDetails {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  address: string;
-  city: string;
-  zip_code: string;
-  country: string;
-  total_amount: number;
-  status: string;
-  created_at: string;
-  user_id: string | null;
-}
-
-interface ShippingDetails {
-  id: string;
-  order_id: string;
-  tracking_number: string;
-  status: string;
-  estimated_delivery: string;
-  shipped_at: string | null;
-  delivered_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-interface OrderResponse {
-  order: OrderDetails;
-  shipping: ShippingDetails | null;
-  items: any[] | null;
-}
-
 export async function createOrder(orderData: OrderData) {
   try {
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    
     // Create a new order
     const orderId = uuidv4();
     const { error: orderError } = await supabase
       .from('orders')
       .insert({
         id: orderId,
+        user_id: user?.id || null,
         first_name: orderData.firstName,
         last_name: orderData.lastName,
         email: orderData.email,
@@ -82,37 +52,12 @@ export async function createOrder(orderData: OrderData) {
       throw orderError;
     }
 
-    // Fetch product data from the database to get the correct UUIDs
-    const productIds = orderData.items.map(item => 
-      typeof item.product.id === 'number' ? item.product.id.toString() : item.product.id
-    );
-    
-    const { data: productsData, error: productsError } = await supabase
-      .from('products')
-      .select('id, price')
-      .in('id', productIds);
-    
-    if (productsError || !productsData) {
-      console.error('Error fetching products:', productsError);
-      throw productsError || new Error('No products found');
-    }
-
-    // Create a mapping of product IDs to their database IDs
-    const productMapping = {};
-    productsData.forEach(product => {
-      productMapping[product.id] = {
-        id: product.id,
-        price: product.price
-      };
-    });
-
-    // Create order items using the correct database product IDs
+    // Create order items
     const orderItems = orderData.items.map(item => {
       const productId = typeof item.product.id === 'number' 
         ? item.product.id.toString() 
         : item.product.id;
       
-      // Use the product price from the database to ensure accuracy
       return {
         order_id: orderId,
         product_id: productId,
@@ -159,7 +104,7 @@ export function generateTrackingNumber() {
   return 'TRK' + Math.floor(Math.random() * 100000000);
 }
 
-export async function getOrderByTrackingNumber(trackingNumber: string): Promise<OrderResponse | null> {
+export async function getOrderByTrackingNumber(trackingNumber: string) {
   try {
     const { data, error } = await supabase
       .from('shipping')
@@ -186,9 +131,8 @@ export async function getOrderByTrackingNumber(trackingNumber: string): Promise<
   }
 }
 
-export async function getOrderById(orderId: string): Promise<OrderResponse> {
+export async function getOrderById(orderId: string) {
   try {
-    // First, get the order details
     const { data: orderData, error: orderError } = await supabase
       .from('orders')
       .select('*')
@@ -200,7 +144,6 @@ export async function getOrderById(orderId: string): Promise<OrderResponse> {
       throw orderError;
     }
 
-    // Get shipping information
     const { data: shippingData, error: shippingError } = await supabase
       .from('shipping')
       .select('*')
@@ -212,7 +155,6 @@ export async function getOrderById(orderId: string): Promise<OrderResponse> {
       throw shippingError;
     }
 
-    // Get order items
     const { data: orderItems, error: itemsError } = await supabase
       .from('order_items')
       .select('*')
@@ -223,7 +165,6 @@ export async function getOrderById(orderId: string): Promise<OrderResponse> {
       throw itemsError;
     }
 
-    // Combine all data
     return {
       order: orderData,
       shipping: shippingData || null,
@@ -258,7 +199,6 @@ export async function updateShippingStatus(orderId: string, status: string) {
   try {
     const updates: any = { status };
     
-    // Update timestamps based on status
     if (status === 'shipped') {
       updates.shipped_at = new Date().toISOString();
     } else if (status === 'delivered') {
@@ -282,9 +222,8 @@ export async function updateShippingStatus(orderId: string, status: string) {
   }
 }
 
-export async function searchOrder(searchTerm: string): Promise<{ found: boolean, type?: string, data?: OrderResponse }> {
+export async function searchOrder(searchTerm: string) {
   try {
-    // First try to find by tracking number
     const { data: trackingData, error: trackingError } = await supabase
       .from('shipping')
       .select(`
@@ -305,7 +244,6 @@ export async function searchOrder(searchTerm: string): Promise<{ found: boolean,
       };
     }
 
-    // Then try to find by order ID
     const { data: orderData, error: orderError } = await supabase
       .from('orders')
       .select(`
@@ -329,6 +267,32 @@ export async function searchOrder(searchTerm: string): Promise<{ found: boolean,
     return { found: false };
   } catch (error) {
     console.error('Error searching for order:', error);
+    throw error;
+  }
+}
+
+export async function getAllOrders() {
+  try {
+    const { data, error } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        shipping(*),
+        order_items(
+          *,
+          products(name, image)
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching all orders:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in getAllOrders:', error);
     throw error;
   }
 }

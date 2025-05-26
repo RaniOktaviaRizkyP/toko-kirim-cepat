@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Check, CreditCard } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { createOrder } from '../services/orderService';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -11,9 +12,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 interface FormData {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   address: string;
+  city: string;
+  zipCode: string;
+  country: string;
   cardNumber: string;
 }
 
@@ -21,10 +26,15 @@ const Checkout = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { items, totalPrice, clearCart } = useCart();
+  const { user } = useAuth();
   const [formData, setFormData] = useState<FormData>({
-    name: '',
-    email: '',
+    firstName: '',
+    lastName: '',
+    email: user?.email || '',
     address: '',
+    city: '',
+    zipCode: '',
+    country: 'Indonesia',
     cardNumber: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,15 +47,18 @@ const Checkout = () => {
       [name]: value,
     }));
     
-    // Clear validation error when user starts typing
     if (validationError) {
       setValidationError(null);
     }
   };
   
   const validateForm = () => {
-    if (!formData.name || formData.name.trim() === '') {
-      setValidationError('Please enter your full name');
+    if (!formData.firstName || formData.firstName.trim() === '') {
+      setValidationError('Please enter your first name');
+      return false;
+    }
+    if (!formData.lastName || formData.lastName.trim() === '') {
+      setValidationError('Please enter your last name');
       return false;
     }
     if (!formData.email || !formData.email.includes('@')) {
@@ -54,6 +67,14 @@ const Checkout = () => {
     }
     if (!formData.address || formData.address.trim() === '') {
       setValidationError('Please enter your delivery address');
+      return false;
+    }
+    if (!formData.city || formData.city.trim() === '') {
+      setValidationError('Please enter your city');
+      return false;
+    }
+    if (!formData.zipCode || formData.zipCode.trim() === '') {
+      setValidationError('Please enter your zip code');
       return false;
     }
     if (!formData.cardNumber || formData.cardNumber.trim() === '') {
@@ -80,26 +101,33 @@ const Checkout = () => {
     setIsSubmitting(true);
     
     try {
-      // Split name into first and last name
-      const nameParts = formData.name.split(' ');
-      const firstName = nameParts[0];
-      const lastName = nameParts.slice(1).join(' ') || '-';
+      const orderData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        address: formData.address,
+        city: formData.city,
+        zipCode: formData.zipCode,
+        country: formData.country,
+        items: items,
+        totalAmount: totalPrice + (totalPrice * 0.08) // Including tax
+      };
+
+      const result = await createOrder(orderData);
       
-      // Tidak melakukan panggilan ke createOrder
-      // Lakukan simulasi saja seolah-olah order berhasil
-      
-      // Data dummy untuk simulasi
-      const dummyOrderId = "simulated-order-" + Date.now();
-      
-      // Clear cart dan navigasi ke halaman sukses
       clearCart();
       toast({
         title: "Order placed successfully",
-        description: `Your order #${dummyOrderId.substring(0, 8)} has been placed successfully!`,
+        description: `Your order has been placed successfully! Tracking number: ${result.trackingNumber}`,
       });
       
-      // Navigasi ke halaman tracking dengan info order dummy
-      navigate('/', { state: { message: "Order created successfully" } });
+      // Navigate to tracking page with order info
+      navigate('/tracking', { 
+        state: { 
+          orderId: result.orderId,
+          trackingNumber: result.trackingNumber
+        } 
+      });
       
     } catch (error) {
       console.error("Error placing order:", error);
@@ -129,24 +157,38 @@ const Checkout = () => {
         <h1 className="text-3xl font-bold mb-8">Checkout</h1>
         
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Simplified Customer Information */}
           <div>
             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
               <h2 className="text-xl font-bold mb-4">Contact Information</h2>
               
               <div className="space-y-4">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Full Name
-                  </label>
-                  <Input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    required
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                      First Name
+                    </label>
+                    <Input
+                      type="text"
+                      id="firstName"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                      Last Name
+                    </label>
+                    <Input
+                      type="text"
+                      id="lastName"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
                 </div>
                 
                 <div>
@@ -165,7 +207,7 @@ const Checkout = () => {
                 
                 <div>
                   <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-                    Delivery Address
+                    Street Address
                   </label>
                   <Input
                     type="text"
@@ -175,6 +217,49 @@ const Checkout = () => {
                     onChange={handleInputChange}
                     required
                     placeholder="Enter your complete address"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
+                      City
+                    </label>
+                    <Input
+                      type="text"
+                      id="city"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700 mb-1">
+                      Zip Code
+                    </label>
+                    <Input
+                      type="text"
+                      id="zipCode"
+                      name="zipCode"
+                      value={formData.zipCode}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
+                    Country
+                  </label>
+                  <Input
+                    type="text"
+                    id="country"
+                    name="country"
+                    value={formData.country}
+                    onChange={handleInputChange}
+                    required
                   />
                 </div>
               </div>
