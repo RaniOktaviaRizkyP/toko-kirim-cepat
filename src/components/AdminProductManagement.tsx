@@ -9,17 +9,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import { getAllProducts } from '../services/productService';
+import { fetchProducts, Product } from '../services/productService';
 
 const AdminProductManagement = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   
   const { data: products = [], isLoading, error } = useQuery({
     queryKey: ['admin-products'],
-    queryFn: getAllProducts,
+    queryFn: fetchProducts,
   });
 
   const [newProduct, setNewProduct] = useState({
@@ -48,7 +48,7 @@ const AdminProductManagement = () => {
     });
   };
 
-  const handleEditProduct = (product: any) => {
+  const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
   };
 
@@ -179,7 +179,7 @@ const AdminProductManagement = () => {
             <p className="text-gray-500">No products found</p>
           </div>
         ) : (
-          products.map((product: any) => (
+          products.map((product: Product) => (
             <Card key={product.id}>
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
