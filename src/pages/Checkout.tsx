@@ -53,32 +53,32 @@ const Checkout = () => {
   };
   
   const validateForm = () => {
-    if (!formData.firstName || formData.firstName.trim() === '') {
-      setValidationError('Please enter your first name');
+    if (!formData.firstName?.trim()) {
+      setValidationError('Mohon masukkan nama depan');
       return false;
     }
-    if (!formData.lastName || formData.lastName.trim() === '') {
-      setValidationError('Please enter your last name');
+    if (!formData.lastName?.trim()) {
+      setValidationError('Mohon masukkan nama belakang');
       return false;
     }
-    if (!formData.email || !formData.email.includes('@')) {
-      setValidationError('Please enter a valid email address');
+    if (!formData.email?.trim() || !formData.email.includes('@')) {
+      setValidationError('Mohon masukkan alamat email yang valid');
       return false;
     }
-    if (!formData.address || formData.address.trim() === '') {
-      setValidationError('Please enter your delivery address');
+    if (!formData.address?.trim()) {
+      setValidationError('Mohon masukkan alamat pengiriman');
       return false;
     }
-    if (!formData.city || formData.city.trim() === '') {
-      setValidationError('Please enter your city');
+    if (!formData.city?.trim()) {
+      setValidationError('Mohon masukkan nama kota');
       return false;
     }
-    if (!formData.zipCode || formData.zipCode.trim() === '') {
-      setValidationError('Please enter your zip code');
+    if (!formData.zipCode?.trim()) {
+      setValidationError('Mohon masukkan kode pos');
       return false;
     }
-    if (!formData.cardNumber || formData.cardNumber.trim() === '') {
-      setValidationError('Please enter your card number');
+    if (!formData.cardNumber?.trim()) {
+      setValidationError('Mohon masukkan nomor kartu');
       return false;
     }
     return true;
@@ -89,9 +89,11 @@ const Checkout = () => {
     
     if (isSubmitting) return;
     
+    console.log('Starting checkout process...');
+    
     if (!validateForm()) {
       toast({
-        title: "Form validation failed",
+        title: "Validasi gagal",
         description: validationError,
         variant: "destructive"
       });
@@ -101,24 +103,28 @@ const Checkout = () => {
     setIsSubmitting(true);
     
     try {
+      console.log('Preparing order data...');
       const orderData = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        address: formData.address,
-        city: formData.city,
-        zipCode: formData.zipCode,
-        country: formData.country,
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
+        address: formData.address.trim(),
+        city: formData.city.trim(),
+        zipCode: formData.zipCode.trim(),
+        country: formData.country.trim(),
         items: items,
-        totalAmount: totalPrice + (totalPrice * 0.08) // Including tax
+        totalAmount: Number((totalPrice + (totalPrice * 0.08)).toFixed(2))
       };
 
+      console.log('Creating order...');
       const result = await createOrder(orderData);
       
+      console.log('Order created successfully:', result);
       clearCart();
+      
       toast({
-        title: "Order placed successfully",
-        description: `Your order has been placed successfully! Tracking number: ${result.trackingNumber}`,
+        title: "Pesanan berhasil dibuat!",
+        description: `Pesanan Anda telah berhasil dibuat! Nomor tracking: ${result.trackingNumber}`,
       });
       
       // Navigate to tracking page with order info
@@ -129,11 +135,11 @@ const Checkout = () => {
         } 
       });
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error placing order:", error);
       toast({
-        title: "Error placing order",
-        description: "We couldn't process your order. Please try again later.",
+        title: "Gagal membuat pesanan",
+        description: error.message || "Terjadi kesalahan saat memproses pesanan. Silakan coba lagi.",
         variant: "destructive"
       });
     } finally {
@@ -159,13 +165,13 @@ const Checkout = () => {
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div>
             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <h2 className="text-xl font-bold mb-4">Contact Information</h2>
+              <h2 className="text-xl font-bold mb-4">Informasi Kontak</h2>
               
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
-                      First Name
+                      Nama Depan *
                     </label>
                     <Input
                       type="text"
@@ -178,7 +184,7 @@ const Checkout = () => {
                   </div>
                   <div>
                     <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
-                      Last Name
+                      Nama Belakang *
                     </label>
                     <Input
                       type="text"
@@ -193,7 +199,7 @@ const Checkout = () => {
                 
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                    Email Address
+                    Alamat Email *
                   </label>
                   <Input
                     type="email"
@@ -207,7 +213,7 @@ const Checkout = () => {
                 
                 <div>
                   <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-                    Street Address
+                    Alamat Lengkap *
                   </label>
                   <Input
                     type="text"
@@ -216,14 +222,14 @@ const Checkout = () => {
                     value={formData.address}
                     onChange={handleInputChange}
                     required
-                    placeholder="Enter your complete address"
+                    placeholder="Masukkan alamat lengkap Anda"
                   />
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
-                      City
+                      Kota *
                     </label>
                     <Input
                       type="text"
@@ -236,7 +242,7 @@ const Checkout = () => {
                   </div>
                   <div>
                     <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700 mb-1">
-                      Zip Code
+                      Kode Pos *
                     </label>
                     <Input
                       type="text"
@@ -251,7 +257,7 @@ const Checkout = () => {
                 
                 <div>
                   <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
-                    Country
+                    Negara *
                   </label>
                   <Input
                     type="text"
@@ -266,11 +272,11 @@ const Checkout = () => {
             </div>
             
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-xl font-bold mb-4">Payment Information</h2>
+              <h2 className="text-xl font-bold mb-4">Informasi Pembayaran</h2>
               
               <div>
                 <label htmlFor="cardNumber" className="block text-sm font-medium text-gray-700 mb-1">
-                  Card Number
+                  Nomor Kartu *
                 </label>
                 <div className="flex items-center">
                   <Input
@@ -291,7 +297,7 @@ const Checkout = () => {
           {/* Order Summary */}
           <div>
             <div className="bg-white rounded-lg shadow-sm p-6 sticky top-6">
-              <h2 className="text-xl font-bold mb-4">Order Summary</h2>
+              <h2 className="text-xl font-bold mb-4">Ringkasan Pesanan</h2>
               
               <div className="space-y-4 mb-6">
                 {items.map(item => (
@@ -303,7 +309,7 @@ const Checkout = () => {
                       <h3 className="font-medium text-gray-800">{item.product.name}</h3>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Qty: {item.quantity}</span>
-                        <span className="font-medium">${(item.product.price * item.quantity).toFixed(2)}</span>
+                        <span className="font-medium">Rp {(item.product.price * item.quantity).toLocaleString('id-ID')}</span>
                       </div>
                     </div>
                   </div>
@@ -313,21 +319,21 @@ const Checkout = () => {
               <div className="space-y-2 text-sm border-b pb-4 mb-4">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">${totalPrice.toFixed(2)}</span>
+                  <span className="font-medium">Rp {totalPrice.toLocaleString('id-ID')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Shipping</span>
-                  <span className="font-medium">Free</span>
+                  <span className="text-gray-600">Ongkos Kirim</span>
+                  <span className="font-medium">Gratis</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Tax</span>
-                  <span className="font-medium">${(totalPrice * 0.08).toFixed(2)}</span>
+                  <span className="text-gray-600">Pajak (8%)</span>
+                  <span className="font-medium">Rp {(totalPrice * 0.08).toLocaleString('id-ID')}</span>
                 </div>
               </div>
               
               <div className="flex justify-between mb-6">
                 <span className="font-bold">Total</span>
-                <span className="font-bold">${(totalPrice + totalPrice * 0.08).toFixed(2)}</span>
+                <span className="font-bold">Rp {(totalPrice + totalPrice * 0.08).toLocaleString('id-ID')}</span>
               </div>
               
               <Button 
@@ -336,11 +342,11 @@ const Checkout = () => {
                 disabled={isSubmitting}
               >
                 <Check className="w-5 h-5 mr-2" /> 
-                {isSubmitting ? "Processing..." : "Complete Order"}
+                {isSubmitting ? "Memproses..." : "Selesaikan Pesanan"}
               </Button>
               
               <p className="text-xs text-gray-500 text-center mt-4">
-                By placing your order, you agree to our Terms of Service and Privacy Policy.
+                Dengan melakukan pemesanan, Anda menyetujui Syarat & Ketentuan dan Kebijakan Privasi kami.
               </p>
             </div>
           </div>

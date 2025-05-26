@@ -25,7 +25,8 @@ const OrderTracking = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const orderId = location.state?.orderId || '';
-  const [searchTerm, setSearchTerm] = useState('');
+  const trackingNumber = location.state?.trackingNumber || '';
+  const [searchTerm, setSearchTerm] = useState(trackingNumber || '');
   const [isLoading, setIsLoading] = useState(false);
   const [orderData, setOrderData] = useState<any>(null);
   const [shippingData, setShippingData] = useState<any>(null);
@@ -37,30 +38,30 @@ const OrderTracking = () => {
     const steps: TrackingStep[] = [
       {
         status: 'completed',
-        title: 'Order Confirmed',
-        description: 'Your order has been received and confirmed',
-        date: new Date(shippingInfo?.created_at || Date.now()).toLocaleDateString(),
+        title: 'Pesanan Dikonfirmasi',
+        description: 'Pesanan Anda telah diterima dan dikonfirmasi',
+        date: new Date(shippingInfo?.created_at || Date.now()).toLocaleDateString('id-ID'),
         icon: <Check className="w-5 h-5" />
       },
       {
         status: status === 'processing' ? 'current' : (status === 'pending' ? 'upcoming' : 'completed'),
-        title: 'Order Processed',
-        description: 'Your order has been processed and is being prepared for shipping',
-        date: status !== 'pending' ? new Date(shippingInfo?.created_at || Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString() : undefined,
+        title: 'Pesanan Diproses',
+        description: 'Pesanan Anda sedang diproses dan disiapkan untuk pengiriman',
+        date: status !== 'pending' ? new Date(shippingInfo?.created_at || Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString('id-ID') : undefined,
         icon: <Database className="w-5 h-5" />
       },
       {
         status: status === 'shipped' ? 'current' : (status === 'pending' || status === 'processing' ? 'upcoming' : 'completed'),
-        title: 'Shipped',
-        description: 'Your order has been shipped and is on the way',
-        date: status === 'shipped' || status === 'delivered' ? new Date(shippingInfo?.shipped_at || Date.now() + 2 * 24 * 60 * 60 * 1000).toLocaleDateString() : undefined,
+        title: 'Dikirim',
+        description: 'Pesanan Anda telah dikirim dan sedang dalam perjalanan',
+        date: status === 'shipped' || status === 'delivered' ? new Date(shippingInfo?.shipped_at || Date.now() + 2 * 24 * 60 * 60 * 1000).toLocaleDateString('id-ID') : undefined,
         icon: <Package className="w-5 h-5" />
       },
       {
         status: status === 'delivered' ? 'completed' : 'upcoming',
-        title: 'Delivered',
-        description: 'Your order has been delivered',
-        date: status === 'delivered' ? new Date(shippingInfo?.delivered_at || Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString() : undefined,
+        title: 'Terkirim',
+        description: 'Pesanan Anda telah sampai tujuan',
+        date: status === 'delivered' ? new Date(shippingInfo?.delivered_at || Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString('id-ID') : undefined,
         icon: <Truck className="w-5 h-5" />
       }
     ];
@@ -73,38 +74,42 @@ const OrderTracking = () => {
     setIsLoading(true);
     setError(null);
     try {
+      console.log('Fetching order by ID:', id);
       const data = await getOrderById(id);
-      if (data) {
+      if (data && data.order) {
+        console.log('Order data received:', data);
         setOrderData(data.order);
         setShippingData(data.shipping);
         setTrackingSteps(generateTrackingSteps(data.shipping?.status || 'processing', data.shipping));
       } else {
-        setError('Order not found. Please check the order ID or tracking number and try again.');
+        setError('Pesanan tidak ditemukan. Mohon periksa ID pesanan atau nomor tracking dan coba lagi.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching order:', err);
-      setError('Failed to fetch order information. Please try again later.');
+      setError(err.message || 'Gagal mengambil informasi pesanan. Silakan coba lagi nanti.');
     } finally {
       setIsLoading(false);
     }
   };
   
   // Function to fetch order data by tracking number
-  const fetchOrderByTrackingNumber = async (trackingNumber: string) => {
+  const fetchOrderByTrackingNumber = async (trackingNum: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await getOrderByTrackingNumber(trackingNumber);
-      if (data) {
+      console.log('Fetching order by tracking number:', trackingNum);
+      const data = await getOrderByTrackingNumber(trackingNum);
+      if (data && data.order) {
+        console.log('Order data received:', data);
         setOrderData(data.order);
         setShippingData(data.shipping);
         setTrackingSteps(generateTrackingSteps(data.shipping?.status || 'processing', data.shipping));
       } else {
-        setError('Order not found. Please check the order ID or tracking number and try again.');
+        setError('Pesanan tidak ditemukan. Mohon periksa ID pesanan atau nomor tracking dan coba lagi.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching order by tracking:', err);
-      setError('Failed to fetch order information. Please try again later.');
+      setError(err.message || 'Gagal mengambil informasi pesanan. Silakan coba lagi nanti.');
     } finally {
       setIsLoading(false);
     }
@@ -116,8 +121,8 @@ const OrderTracking = () => {
     
     if (!searchTerm.trim()) {
       toast({
-        title: "Input required",
-        description: "Please enter an order ID or tracking number",
+        title: "Input diperlukan",
+        description: "Mohon masukkan ID pesanan atau nomor tracking",
         variant: "destructive"
       });
       return;
@@ -127,9 +132,11 @@ const OrderTracking = () => {
     setError(null);
     
     try {
-      const result = await searchOrder(searchTerm);
+      console.log('Searching for order with term:', searchTerm);
+      const result = await searchOrder(searchTerm.trim());
       
       if (result.found && result.data) {
+        console.log('Order found:', result.data);
         setOrderData(result.data.order);
         setShippingData(result.data.shipping);
         setTrackingSteps(generateTrackingSteps(
@@ -138,27 +145,27 @@ const OrderTracking = () => {
         ));
         
         toast({
-          title: "Order found",
-          description: `Found order for ${result.data.order.first_name} ${result.data.order.last_name}`,
+          title: "Pesanan ditemukan",
+          description: `Pesanan ditemukan untuk ${result.data.order.first_name} ${result.data.order.last_name}`,
         });
       } else {
         setOrderData(null);
         setShippingData(null);
-        setError('Order not found. Please check the order ID or tracking number and try again.');
+        setError('Pesanan tidak ditemukan. Mohon periksa ID pesanan atau nomor tracking dan coba lagi.');
         
         toast({
-          title: "Order not found",
-          description: "We couldn't find any order matching your search",
+          title: "Pesanan tidak ditemukan",
+          description: "Kami tidak dapat menemukan pesanan yang sesuai dengan pencarian Anda",
           variant: "destructive"
         });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error searching for order:', err);
-      setError('Failed to search for order. Please try again later.');
+      setError(err.message || 'Gagal mencari pesanan. Silakan coba lagi nanti.');
       
       toast({
         title: "Error",
-        description: "An error occurred while searching for your order",
+        description: err.message || "Terjadi kesalahan saat mencari pesanan Anda",
         variant: "destructive"
       });
     } finally {
@@ -170,69 +177,80 @@ const OrderTracking = () => {
   useEffect(() => {
     if (!orderData?.id) return;
     
+    console.log('Setting up real-time subscriptions for order:', orderData.id);
+    
     // Subscribe to changes in the orders table
     const orderChannel = supabase
-      .channel('public:orders:id=' + orderData.id)
+      .channel('order-updates-' + orderData.id)
       .on('postgres_changes', { 
         event: 'UPDATE', 
         schema: 'public', 
         table: 'orders', 
         filter: `id=eq.${orderData.id}` 
       }, (payload) => {
-        console.log('Order updated:', payload);
-        setOrderData({...orderData, ...payload.new});
+        console.log('Order updated via realtime:', payload);
+        setOrderData(prev => ({...prev, ...payload.new}));
       })
       .subscribe();
       
     // Subscribe to changes in the shipping table
     const shippingChannel = supabase
-      .channel('public:shipping:order_id=' + orderData.id)
+      .channel('shipping-updates-' + orderData.id)
       .on('postgres_changes', { 
         event: 'UPDATE', 
         schema: 'public', 
         table: 'shipping', 
         filter: `order_id=eq.${orderData.id}` 
       }, (payload) => {
-        console.log('Shipping updated:', payload);
-        setShippingData({...shippingData, ...payload.new});
-        setTrackingSteps(generateTrackingSteps(payload.new.status, {...shippingData, ...payload.new}));
+        console.log('Shipping updated via realtime:', payload);
+        const newShippingData = {...shippingData, ...payload.new};
+        setShippingData(newShippingData);
+        setTrackingSteps(generateTrackingSteps(payload.new.status, newShippingData));
+        
+        toast({
+          title: "Status pesanan diperbarui",
+          description: `Status pengiriman telah diubah menjadi: ${payload.new.status}`,
+        });
       })
       .subscribe();
     
     // Clean up subscriptions on unmount
     return () => {
+      console.log('Cleaning up real-time subscriptions');
       supabase.removeChannel(orderChannel);
       supabase.removeChannel(shippingChannel);
     };
   }, [orderData?.id, shippingData]);
   
-  // Fetch order data on initial load if orderId is provided
+  // Fetch order data on initial load if orderId or trackingNumber is provided
   useEffect(() => {
     if (orderId) {
       fetchOrderById(orderId);
+    } else if (trackingNumber) {
+      fetchOrderByTrackingNumber(trackingNumber);
     }
-  }, [orderId]);
+  }, [orderId, trackingNumber]);
   
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Track Your Order</h1>
+        <h1 className="text-3xl font-bold mb-8">Lacak Pesanan Anda</h1>
         
         {/* Order Tracking Form */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
             <div className="flex-grow">
               <label htmlFor="searchTerm" className="block text-sm font-medium text-gray-700 mb-1">
-                Order ID or Tracking Number
+                ID Pesanan atau Nomor Tracking
               </label>
               <Input
                 type="text"
                 id="searchTerm"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Enter your order ID or tracking number"
+                placeholder="Masukkan ID pesanan atau nomor tracking Anda"
                 className="w-full"
                 disabled={isLoading}
                 required
@@ -244,9 +262,9 @@ const OrderTracking = () => {
                 className="bg-shop-primary hover:bg-shop-secondary h-10"
                 disabled={isLoading}
               >
-                {isLoading ? "Searching..." : (
+                {isLoading ? "Mencari..." : (
                   <>
-                    <Search className="w-4 h-4 mr-2" /> Track Order
+                    <Search className="w-4 h-4 mr-2" /> Lacak Pesanan
                   </>
                 )}
               </Button>
@@ -265,18 +283,18 @@ const OrderTracking = () => {
         {orderData && shippingData && (
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="mb-6">
-              <h2 className="text-xl font-bold mb-1">Order #{orderData.id}</h2>
+              <h2 className="text-xl font-bold mb-1">Pesanan #{orderData.id.substring(0, 8)}...</h2>
               <p className="text-gray-600 mb-2">
                 <span className="font-medium">Status:</span> {' '}
                 <span className="capitalize">{orderData.status}</span>
               </p>
               <p className="text-gray-600">
-                <span className="font-medium">Tracking Number:</span> {' '}
+                <span className="font-medium">Nomor Tracking:</span> {' '}
                 {shippingData.tracking_number}
               </p>
               <p className="text-gray-600">
-                <span className="font-medium">Estimated Delivery:</span> {' '}
-                {new Date(shippingData.estimated_delivery).toLocaleDateString()}
+                <span className="font-medium">Estimasi Pengiriman:</span> {' '}
+                {new Date(shippingData.estimated_delivery).toLocaleDateString('id-ID')}
               </p>
             </div>
             
@@ -284,7 +302,7 @@ const OrderTracking = () => {
             
             {/* Tracking Timeline */}
             <div className="relative py-4">
-              <h3 className="font-bold text-lg mb-4">Delivery Status</h3>
+              <h3 className="font-bold text-lg mb-4">Status Pengiriman</h3>
               
               {trackingSteps.map((step, index) => (
                 <div key={index} className="flex mb-8 last:mb-0">
@@ -319,20 +337,20 @@ const OrderTracking = () => {
             {/* Order and Shipping Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h3 className="font-bold text-lg mb-3">Shipping Information</h3>
+                <h3 className="font-bold text-lg mb-3">Informasi Pengiriman</h3>
                 <div className="space-y-2">
                   <p>
-                    <span className="text-sm text-gray-600 block">Recipient</span>
+                    <span className="text-sm text-gray-600 block">Penerima</span>
                     <span className="font-medium">
                       {orderData.first_name} {orderData.last_name}
                     </span>
                   </p>
                   <p>
-                    <span className="text-sm text-gray-600 block">Contact</span>
+                    <span className="text-sm text-gray-600 block">Kontak</span>
                     <span className="font-medium">{orderData.email}</span>
                   </p>
                   <p>
-                    <span className="text-sm text-gray-600 block">Shipping Address</span>
+                    <span className="text-sm text-gray-600 block">Alamat Pengiriman</span>
                     <span className="font-medium">
                       {orderData.address}, {orderData.city}, {orderData.zip_code}, {orderData.country}
                     </span>
@@ -341,21 +359,21 @@ const OrderTracking = () => {
               </div>
               
               <div>
-                <h3 className="font-bold text-lg mb-3">Order Information</h3>
+                <h3 className="font-bold text-lg mb-3">Informasi Pesanan</h3>
                 <div className="space-y-2">
                   <p>
-                    <span className="text-sm text-gray-600 block">Order Date</span>
+                    <span className="text-sm text-gray-600 block">Tanggal Pesanan</span>
                     <span className="font-medium">
-                      {new Date(orderData.created_at).toLocaleDateString()}
+                      {new Date(orderData.created_at).toLocaleDateString('id-ID')}
                     </span>
                   </p>
                   <p>
-                    <span className="text-sm text-gray-600 block">Shipping Method</span>
-                    <span className="font-medium">Standard Shipping</span>
+                    <span className="text-sm text-gray-600 block">Metode Pengiriman</span>
+                    <span className="font-medium">Pengiriman Standar</span>
                   </p>
                   <p>
-                    <span className="text-sm text-gray-600 block">Order Total</span>
-                    <span className="font-medium">${orderData.total_amount.toFixed(2)}</span>
+                    <span className="text-sm text-gray-600 block">Total Pesanan</span>
+                    <span className="font-medium">Rp {Number(orderData.total_amount).toLocaleString('id-ID')}</span>
                   </p>
                 </div>
               </div>
